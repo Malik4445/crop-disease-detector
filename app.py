@@ -1,5 +1,5 @@
 import streamlit as st
-import keras
+import tensorflow as tf
 from PIL import Image
 import numpy as np
 
@@ -10,14 +10,14 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. Cache the model loading (Using native Keras)
+# 2. Cache the model loading using TensorFlow
 @st.cache_resource
 def load_my_ai_model():
-    return keras.models.load_model('crop_disease_model.keras')
+    return tf.keras.models.load_model('crop_disease_model.keras')
 
 model = load_my_ai_model()
 
-# 3. Complete list of 38 trained categories
+# 3. Complete list of  38 trained categories
 CLASS_NAMES = [
     'Apple Scab', 'Apple Black Rot', 'Cedar Apple Rust', 'Healthy Apple', 'Healthy Blueberry',
     'Cherry Powdery Mildew', 'Healthy Cherry', 'Corn Gray Leaf Spot', 'Corn Common Rust', 
@@ -31,7 +31,7 @@ CLASS_NAMES = [
     'Tomato Mosaic Virus', 'Healthy Tomato'
 ]
 
-# 4. Building UI Header
+# 4. Building the UI Header
 st.title("🌱 AgriShield AI Detection System")
 st.write("Upload a clear photo of a crop leaf to diagnose plant health conditions instantly.")
 
@@ -43,7 +43,7 @@ if uploaded_file is not None:
     st.image(image, caption='Uploaded Sample Leaf Picture', use_container_width=True)
     
     with st.spinner("Analyzing image features against AI database..."):
-        # 6. Preprocessing
+        # 6. Preprocessing matching the exact model requirements
         img_resized = image.resize((224, 224))
         img_array = np.array(img_resized)
         
@@ -56,10 +56,9 @@ if uploaded_file is not None:
         predictions = model.predict(img_array)
         predicted_class_index = np.argmax(predictions)
         
-        # Calculate a safe mock confidence bar since we aren't using the full tf.nn layers
-        confidence_score = float(np.max(predictions)) * 10
-        if confidence_score > 100: confidence_score = 98.4
-        if confidence_score < 50: confidence_score = 76.2
+        # Calculate confidence score safely using TensorFlow
+        score = tf.nn.softmax(predictions[0])
+        confidence_score = float(np.max(score)) * 100
         
         predicted_label = CLASS_NAMES[predicted_class_index]
         
@@ -76,3 +75,4 @@ if uploaded_file is not None:
         st.write("- Isolate infected plants promptly to prevent canopy transmission.")
         st.write("- Prune damaged leaves using sterilized cutting tools.")
         st.write("- Introduce optimized targeted organic or chemical treatments if required.")
+
